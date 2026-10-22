@@ -1,0 +1,54 @@
+name: sync-listener
+
+on:
+  workflow_dispatch:
+
+# هرگز دو Listener هم‌زمان (دو اتصال هم‌زمان به یک session ممکن نیست)
+concurrency:
+  group: tg-bridge-listener
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # push روی برنچ bus
+  actions: write    # dispatch مجدد (handoff)
+
+jobs:
+  listen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install
+        run: pip install -r bot/requirements.txt
+
+      - name: Mask secrets
+        env:
+          TG_SESSION_ENC: ${{ secrets.TG_SESSION_ENC }}
+          TG_SESSION_KEY: ${{ secrets.TG_SESSION_KEY }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          TG_CONTENT_KEY: ${{ secrets.TG_CONTENT_KEY }}
+        run: |
+          for v in "$TG_SESSION_ENC" "$TG_SESSION_KEY" "$TG_API_HASH" "$TG_CONTENT_KEY"; do
+            [ -n "$v" ] && echo "::add-mask::$v"
+          done
+          true
+
+      - name: Run listener
+        env:
+          TG_SESSION_ENC: ${{ secrets.TG_SESSION_ENC }}
+          TG_SESSION_KEY: ${{ secrets.TG_SESSION_KEY }}
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          TG_CONTENT_KEY: ${{ secrets.TG_CONTENT_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+        run: python -m bot.listener
