@@ -1,3 +1,4 @@
 telethon>=1.36
-cryptg>=0.4     # فقط روی runner گیت‌هاب (wheel آماده دارد): دانلود فایل‌ها را بسیار سریع‌تر می‌کند
+cryptg>=0.4     # only on the GitHub runner (prebuilt wheel available): makes file downloads much faster
 cryptography>=42
+Pillow>=10      # recompresses cached profile photos to 48px JPEGs

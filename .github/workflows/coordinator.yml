@@ -1,12 +1,12 @@
-name: sync-coordinator
+name: state-check
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 concurrency:
-  group: tg-bridge-coordinator
+  group: state-check-singleton
   cancel-in-progress: false
 
 permissions:
@@ -18,13 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v7
         with:
-          python-version: "3.12"
-      - name: Check and restart listener if needed
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check worker state
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONUNBUFFERED: "1"
           REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_NAME: ${{ github.ref_name }}
-        run: python -m bot.coordinator
+        run: python3 -m bot.coordinator
