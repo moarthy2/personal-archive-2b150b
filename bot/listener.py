@@ -244,6 +244,9 @@ class Listener:
                 self.add_result(cid, '?', False, error=f'could not read command: {type(e).__name__}')
                 continue
             typ = cmd.get('type')
+            if not isinstance(typ, str):
+                self.add_result(cid, '?', False, error='unknown command')
+                continue
             if typ == 'download_file':
                 self.spawn(self._run(cid, typ, self._download(cmd)))
             elif typ in FAST_COMMANDS and typ in cmds.HANDLERS:
